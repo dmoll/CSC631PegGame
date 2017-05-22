@@ -3,12 +3,35 @@
 <head>
     <title>CSC 631 Peg Game by Dave Moll</title>
     <meta charset="utf-8" />    
+    <script type="text/javascript" src="MoveList.js">
+    </script>
+    <script type="text/javascript" src="where.js">
+    </script>
 </head>
-<body onload="drawBoard()">
-<canvas id="myCanvas" width="500" height="500"
-        style="border:1px solid #c3c3c3;">
+<body onload="initalizeBoard()">
+    <form action="">
+        <p>
+            Within the canvas area: <br />
+            x:
+            <input type="text" id="xcoor1" size="4" />
+            y:
+            <input type="text" id="ycoor1" size="4" />
+            <br /><br />
+            Relative to the origin of the screen coordinate system:
+            <br />
+            x:
+            <input type="text" id="xcoor2" size="4" />
+            y:
+            <input type="text" id="ycoor2" size="4" />
+        </p>
+    </form>
+<canvas onclick="canvasClicked(event)" id="myCanvas" width="500" height="500"
+        style="border: 1px solid #c3c3c3;">
     Your browser does not support the canvas element.
 </canvas>
 <script type="text/javascript" src="peg_game.js"></script>
+<p id="moveInfo"></p>
+<p id="circleOneInfo"></p>
+<p id="circleClicked"></p>
 </body>
 </html>

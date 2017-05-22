@@ -75,9 +75,11 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="MoveList.js" />
     <Content Include="pegs.html" />
     <Content Include="peg_game.js" />
     <Content Include="Web.config" />
+    <Content Include="where.js" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
