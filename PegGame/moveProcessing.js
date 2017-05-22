@@ -1,11 +1,10 @@
-﻿// where.js
-//   Show the coordinates of the mouse cursor position 
-//   in an image and anywhere on the screen when the mouse
-//   is clicked
-
-// The event handler function to get and display the 
-//  coordinates of the cursor, both in an element and 
-//  on the screen
+﻿/**
+ * moveProcessing.js - contains most of the event handling
+ * code (and supporting functions) to deal with the actual gameplay.
+ * 
+ * Author: David Moll - dmoll@emich.edu
+ * COSC 631 Assignment #3
+ */
 
 /**
  * Main event handler for the Peg game.
@@ -25,8 +24,7 @@ function canvasClicked(evt) {
     //printCircleInfo();
 
     //console.log("The circle clicked is: " + circleClicked);
-
-    
+   
     if (circleClicked > 0) {
 
         // If the user hasn't selected a peg yet, we need to note that
@@ -115,9 +113,11 @@ function displayGameOverMessage() {
 }
 
 /**
+ * Determine if the user has any possible moves remaining.
  * 
+ * This function essentially determines if the game has ended.
  * 
- * @returns {} 
+ * @returns {true if there are possible moves left on the board, false otherwise.} 
  */
 function areThereMovesRemaining() {
     
@@ -145,10 +145,9 @@ function areThereMovesRemaining() {
 }
 
 /**
- * 
- * @param {} destinationCircle 
- * @param {} startCircle 
- * @returns {} 
+ * Move the peg to an open hole on the board.
+ * @param {Number of the open hole to move to.} destinationCircle 
+ * @param {Number of the peg to be moved.} startCircle  
  */
 function performMove(destinationCircle, startCircle){
     
@@ -269,8 +268,7 @@ function pointInCircle(x, y, cx, cy, radius) {
 }
 
 /**
- * Print out some information for test purposes
- * @returns {} 
+ * Print out some information for test purposes 
  */
 function printCircleInfo() {
     var circleInfo = "";

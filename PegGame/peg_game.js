@@ -1,6 +1,9 @@
-﻿// Create a an array to hold the coordinates of the centers 
-// of all of the circles
-
+﻿/**
+ * peg_game.js - contains most of the board setup methods
+ * 
+ * Author: David Moll - dmoll@emich.edu
+ * COSC 631 Assignment #3
+ */
 // Globals, because why not, it's a small project
 
 var PEG_RADIUS = 15;
@@ -126,6 +129,12 @@ function initalizeBoard() {
 
 }
 
+/**
+ * Set up starting state of all the pegs and holes on the board.
+ * @param {Number of the hole in the board that starts out empty.} openHole 
+ * @param {Array of circles representing the holes on the boards.} circles 
+ * @returns {} 
+ */
 function initializeBoardWithPegs(openHole, circles) {
     for (var i = 0; i < circles.length; i++) {
         if ((i + 1) === openHole) {
@@ -184,7 +193,7 @@ function resetBoard() {
  */
 function randomStart() {
     window.GAME_START_OPTION = "RandomPeg";
-    
+
     initalizeBoard();
 }
 

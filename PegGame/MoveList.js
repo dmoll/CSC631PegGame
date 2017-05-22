@@ -36,8 +36,14 @@
  *  14          12 (over 13), 5 (over 9)
  *  15          13 (over 14), 6 (over 10)
  * 
- * And since javascript makes it easy to create arrays and association lists,
- * we can stick this move list in a global array
+ * And since javascript makes it easy to create arrays,
+ * we can stick this move list in a global array.
+ * 
+ * The refinement of the move list array was also suggested by the work done by Cory Gross here:
+ * http://coryg89.github.io/technical/2013/06/06/recreating-the-peg-game-at-cracker-barrel-in-html5/
+ * 
+ * Although I'm not a fan of inlining the "object" that he used creation, so I created a "class" to hold the 
+ * move information.
  */
 
 var MOVE_LIST = [];
