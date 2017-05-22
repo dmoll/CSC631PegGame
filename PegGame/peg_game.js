@@ -6,6 +6,10 @@
 var PEG_RADIUS = 15;
 var CIRCLE_COLLECTION = [];
 var PEG_SELECTED = 0;
+var ANY_MOVES_REMAINING = true;
+var PEGS_REMAINING = 0;
+var GAME_START_OPTION = "FirstPeg";
+
 
 /**
  * Circle object to represent the pegs on the game board
@@ -23,48 +27,17 @@ function Circle(x, y, color, hasPeg) {
 }
 
 /**
- * Returns a random color that will look good
- * behind black text.
- * @returns {Text containing a random light CSS color.} 
- */
-function getRandomColor() {
-    var color = "White";
-
-    var randInt = Math.floor((Math.random() * 5) + 1);
-    switch (randInt) {
-        case 1:
-            color = "Aqua";
-            break;
-        case 2:
-            color = "Yellow";
-            break;
-        case 3:
-            color = "LightPink";
-            break;
-        case 4:
-            color = "Lime";
-            break;
-        case 5:
-            color = "Orange";
-            break;
-    }
-
-    return color;
-}
-
-/**
  * Runs when the body of the pegs.html loads.
  * Draws the game board. 
  */
 function initalizeBoard() {
+    window.CIRCLE_COLLECTION = [];
+    window.PEG_SELECTED = 0;
+    window.ANY_MOVES_REMAINING = true;
+    window.PEGS_REMAINING = 0;
+
     var canvas = document.getElementById("myCanvas");
     var ctx = canvas.getContext("2d");
-
-    // coordinates of the center of the canvas
-    var center = {
-        x: canvas.width / 2,
-        y: canvas.height / 2
-    };
 
     // store the coordinates of the points of the triangles 
     var triangleTop = {
@@ -131,15 +104,25 @@ function initalizeBoard() {
     CIRCLE_COLLECTION.push(circleFourteen);
     CIRCLE_COLLECTION.push(circleFifteen);
 
-    // set circle one to be empty to start
-    CIRCLE_COLLECTION[0].color = "White";
+    // set which peg is empty to begin with based on the game start option        
+    var openHole;
 
-    var openHole = 1;
+    if (window.GAME_START_OPTION === "RandomPeg") {
+        openHole = getRandomStartPeg();
+        CIRCLE_COLLECTION[openHole - 1].color = "White";
+    } else {
+        // set circle one to be empty to start
+        CIRCLE_COLLECTION[0].color = "White";
+        openHole = 1;
+    }
     // fill the holes with pegs
     initializeBoardWithPegs(openHole, CIRCLE_COLLECTION);
 
     // Now draw the circles on the game board
     drawGameCircles(CIRCLE_COLLECTION, ctx);
+
+    // Clear the game over message
+    document.getElementById("gameOverDisplay").textContent = "";
 
 }
 
@@ -150,6 +133,7 @@ function initializeBoardWithPegs(openHole, circles) {
         }
 
         circles[i].hasPeg = true;
+        window.PEGS_REMAINING++;
     }
 }
 
@@ -184,4 +168,60 @@ function drawGameCircles(circles, context) {
         context.fillStyle = "rgba(0,0,0,1)";
         context.fillText(pegNumber, circles[i].x - (textWidth / 2), circles[i].y + (textHeight / 2));
     }
+}
+
+/**
+ * Reset the board with the First Peg as the empty one
+ */
+function resetBoard() {
+    window.GAME_START_OPTION = "FirstPeg";
+
+    initalizeBoard();
+}
+
+/**
+ * Reset the board with a random peg empty 
+ */
+function randomStart() {
+    window.GAME_START_OPTION = "RandomPeg";
+    
+    initalizeBoard();
+}
+
+/**
+ * Returns a random color that will look good
+ * behind black text.
+ * @returns {Text containing a random light CSS color.} 
+ */
+function getRandomColor() {
+    var color = "White";
+
+    var randInt = Math.floor((Math.random() * 5) + 1);
+    switch (randInt) {
+        case 1:
+            color = "Aqua";
+            break;
+        case 2:
+            color = "Yellow";
+            break;
+        case 3:
+            color = "LightPink";
+            break;
+        case 4:
+            color = "Lime";
+            break;
+        case 5:
+            color = "Orange";
+            break;
+    }
+
+    return color;
+}
+
+/**
+ * Choose a random number from 1 to 15 to be the starting empty peg
+ * @returns {Random number from 1 to 15 inclusive} 
+ */
+function getRandomStartPeg() {
+    return Math.floor((Math.random() * 15) + 1);
 }

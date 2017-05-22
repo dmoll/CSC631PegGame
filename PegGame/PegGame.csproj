@@ -79,7 +79,7 @@
     <Content Include="pegs.html" />
     <Content Include="peg_game.js" />
     <Content Include="Web.config" />
-    <Content Include="where.js" />
+    <Content Include="moveProcessing.js" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />

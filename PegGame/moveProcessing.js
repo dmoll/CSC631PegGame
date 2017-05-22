@@ -13,14 +13,18 @@
  * @param {Click event} evt  
  */
 function canvasClicked(evt) {
-    var canvas = document.getElementById("myCanvas");
-    var canvasClickCoords = getCursorPosition(canvas, evt);
+    // if there are no moves left, don't do anything
+    if (!window.ANY_MOVES_REMAINING) {
+        return;
+    }
 
+
+    var canvas = document.getElementById("myCanvas");    
     var circleClicked = findCircleClicked(canvas, evt, CIRCLE_COLLECTION);
 
-    printCircleInfo();
+    //printCircleInfo();
 
-    document.getElementById("circleClicked").textContent = "The circle clicked is: " + circleClicked;
+    //console.log("The circle clicked is: " + circleClicked);
 
     
     if (circleClicked > 0) {
@@ -32,7 +36,7 @@ function canvasClicked(evt) {
             window.PEG_SELECTED = circleClicked;
 
             // draw a bright green ring around the selected circle
-            highlightClickedCircle(canvas, CIRCLE_COLLECTION[circleClicked - 1], "Lime");            
+            highlightClickedCircle(canvas, CIRCLE_COLLECTION[circleClicked - 1]);            
             
         } else {
             // The user previously chose a peg, so check to see if
@@ -40,8 +44,12 @@ function canvasClicked(evt) {
 
             var goodMove = checkIfMoveIsValid(circleClicked, window.PEG_SELECTED);
             if (goodMove) {
-                var successMessage = "Moving from " + window.PEG_SELECTED + " to " + circleClicked + " is a valid move!";
-                document.getElementById("moveInfo").textContent = successMessage;
+                // valid move messages are for debugging only
+                //var successMessage = "Moving from " + window.PEG_SELECTED + " to " + circleClicked + " is a valid move!";
+                //document.getElementById("moveInfo").textContent = successMessage;
+
+                // clear the invalid move message if this was a good move
+                document.getElementById("moveInfo").textContent = "";
 
                 performMove(circleClicked, window.PEG_SELECTED);
 
@@ -49,17 +57,91 @@ function canvasClicked(evt) {
                 var errorMessage = "Moving from " + window.PEG_SELECTED + " to " + circleClicked + " is not a valid move!";
                 document.getElementById("moveInfo").textContent = errorMessage;
             }
+
+            // Even if they didn't select a good move, reset the board state
+            // to nothing selected
+
             // clear the ring from the selected peg
-            highlightClickedCircle(canvas, CIRCLE_COLLECTION[window.PEG_SELECTED - 1], "White");
+            clearClickedCircle(canvas, CIRCLE_COLLECTION[window.PEG_SELECTED - 1]);
 
             // reset the selected peg
             window.PEG_SELECTED = 0;
 
             // redraw the board
             drawGameCircles(CIRCLE_COLLECTION, canvas.getContext("2d"));
+
+            window.ANY_MOVES_REMAINING = areThereMovesRemaining();
         }
     }
+
+    // TODO: REMOVE BEFORE SUBMITTING - DEBUG INFO
+    //var movesRemainingMessage;
+    //if (window.ANY_MOVES_REMAINING) {
+    //    movesRemainingMessage = "There are still moves remaining!  You have " + window.PEGS_REMAINING + " left.";
+    //} else {
+    //    movesRemainingMessage = "There are no moves left! You have " + window.PEGS_REMAINING + " left.";
+    //}
+    //document.getElementById("movesRemaining").textContent = movesRemainingMessage;
+
+
+    // if there are no moves left, display the game ending message
+    if (!window.ANY_MOVES_REMAINING) {
+        displayGameOverMessage();
+    }
+}
+
+/**
+ * If the game has ended, check how many pegs are left and display an appropriate message. 
+ */
+function displayGameOverMessage() {
+    var gameOverMessage;
+
+    switch (window.PEGS_REMAINING) {
+        case 1:
+            gameOverMessage = "Victory!";
+            break;
+        case 2:
+            gameOverMessage = "So close!  Try again!";
+            break;
+        case 3:
+            gameOverMessage = "You are improving!  Try again!";
+            break;
+        default:
+            gameOverMessage = "Better luck next time";
+            break;        
+    }
+
+    document.getElementById("gameOverDisplay").textContent = gameOverMessage;
+}
+
+/**
+ * 
+ * 
+ * @returns {} 
+ */
+function areThereMovesRemaining() {
     
+    for (var i = 0; i < CIRCLE_COLLECTION.length; i++) {
+
+        // the circle number is the index plus 1
+        var circleNum = i + 1;
+
+        // for each circle, check if it has a peg
+        if (CIRCLE_COLLECTION[i].hasPeg) {
+            // if it has a peg, check if that peg can move
+            var validMovesForCurrentPeg = MOVE_LIST[i];
+
+            // iterate over the possible moves for that peg and check if each is valid
+            for (var j = 0; j < validMovesForCurrentPeg.length; j++) {
+                if (checkIfMoveIsValid(validMovesForCurrentPeg[j].targetHole, circleNum)) {
+                    return true;
+                }
+            }
+        }
+    }
+
+    // if we get here there are no valid moves left
+    return false;
 }
 
 /**
@@ -95,6 +177,7 @@ function performMove(destinationCircle, startCircle){
             // now empty out the currentPeg
             currentPeg.hasPeg = false;
             currentPeg.color = "White";
+            window.PEGS_REMAINING--;
         }
     }
 
@@ -209,20 +292,60 @@ function printCircleInfo() {
     //CIRCLE_COLLECTION[0].y;
 }
 
-function highlightClickedCircle(canvas, selectedCircle, color) {
+/**
+ * Calls overlayCircle with necessary parameters to add a highlight
+ * to indicate that this is the circle the user clicked.
+ *
+ * @param {Canvas we're drawing on} canvas 
+ * @param {Circle to add a green highlighted ring} selectedCircle 
+ */
+function highlightClickedCircle(canvas, selectedCircle) {
+
+    overlayCircle(canvas, selectedCircle, "Lime", 3, false);
+
+}
+
+/**
+ * Calls overlayCircle with necessary parameters to clear the 
+ * highlighting that is drawn when the user selects a circle.
+ *
+ * @param {Canvas we're drawing on} canvas 
+ * @param {Circle to remove highlighting from} selectedCircle 
+ */
+function clearClickedCircle(canvas, selectedCircle) {
+
+    overlayCircle(canvas, selectedCircle, "White", 4, true);
+
+}
+
+/**
+ * Draw a circle around one of the pegs.  Used to highlight a selected circle
+ * Or to clear the highlighting by drawing over the entire circle.
+ * @param {Canvas we're drawing on} canvas 
+ * @param {Circle to draw around} selectedCircle 
+ * @param {Color of the circle to draw} color 
+ * @param {How thick the border circle should be} lineThickness 
+ * @param {Whether or not to fill in the circle to erase the highlighting.} fillCircle  
+ */
+function overlayCircle(canvas, selectedCircle, color, lineThickness, fillCircle) {
     var context = canvas.getContext("2d");
 
     var oldLineWidth = context.lineWidth;
 
     // we want to draw the new circle just outside the old circle
-    var highlightRadius = PEG_RADIUS + (3 * oldLineWidth);
+    var highlightRadius = PEG_RADIUS + (lineThickness * oldLineWidth);
     context.lineWidth = 3 * oldLineWidth;
     // drawn the "selection" circle
     context.beginPath();
     context.arc(selectedCircle.x, selectedCircle.y, highlightRadius, 0, 2 * Math.PI, false);
-    context.strokeStyle = color;    
+    context.strokeStyle = color;
+
+    if (fillCircle) {
+        context.fillStyle = color;
+        context.fill();
+    }
+
     context.stroke();
 
     context.lineWidth = oldLineWidth;
-
 }
