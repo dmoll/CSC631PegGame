@@ -22,8 +22,10 @@
         <br/>
     </p>
 </form>
-<canvas onclick="canvasClicked(event)" id="myCanvas" width="500" height="500"
-        style="border: 1px solid #c3c3c3;">
+<canvas id="myCanvas" width="500" height="500"
+        style="border: 1px solid #c3c3c3;"
+        onmousedown="canvasClicked(event)"
+        onmouseup="dropCircle(event)">
     Your browser does not support the canvas element.
 </canvas>
 <script type="text/javascript" src="peg_game.js"></script>

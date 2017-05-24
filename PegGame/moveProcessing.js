@@ -2,6 +2,9 @@
  * moveProcessing.js - contains most of the event handling
  * code (and supporting functions) to deal with the actual gameplay.
  * 
+ * basic drag and drop routines on the canvas adapted from:
+ * http://html5.litten.com/how-to-drag-and-drop-on-an-html5-canvas/
+ * 
  * Author: David Moll - dmoll@emich.edu
  * COSC 631 Assignment #3
  */
@@ -17,9 +20,8 @@ function canvasClicked(evt) {
         return;
     }
 
-
     var canvas = document.getElementById("myCanvas");    
-    var circleClicked = findCircleClicked(canvas, evt, CIRCLE_COLLECTION);
+    var circleClicked = findCircleClicked(canvas, evt, PEG_COLLECTION);
 
     //printCircleInfo();
 
@@ -34,53 +36,88 @@ function canvasClicked(evt) {
             window.PEG_SELECTED = circleClicked;
 
             // draw a bright green ring around the selected circle
-            highlightClickedCircle(canvas, CIRCLE_COLLECTION[circleClicked - 1]);            
-            
-        } else {
-            // The user previously chose a peg, so check to see if
-            // they have selected a valid move
+            //highlightClickedCircle(canvas, PEG_COLLECTION[circleClicked - 1]);            
+            window.MOVING = true;
+            canvas.onmousemove = moveCircle;
 
-            var goodMove = checkIfMoveIsValid(circleClicked, window.PEG_SELECTED);
-            if (goodMove) {
-                // valid move messages are for debugging only
-                //var successMessage = "Moving from " + window.PEG_SELECTED + " to " + circleClicked + " is a valid move!";
-                //document.getElementById("moveInfo").textContent = successMessage;
+            console.log("Circle picked up was " + circleClicked);
+        }
+    }
+}
 
-                // clear the invalid move message if this was a good move
-                document.getElementById("moveInfo").textContent = "";
+/**
+ * Process the mousemove event by moving the circle
+ * for the peg around the screen.
+ * @param {mouse move event} event 
+ */
+function moveCircle(event) {
+    var canvas = document.getElementById("myCanvas");
+    var circlePosition = getCursorPosition(canvas, event);
 
-                performMove(circleClicked, window.PEG_SELECTED);
+    var ctx = canvas.getContext("2d");
+    PEG_COLLECTION[window.PEG_SELECTED - 1].x = circlePosition.x;
+    PEG_COLLECTION[window.PEG_SELECTED - 1].y = circlePosition.y;
+    clear();
+    redrawBoard(canvas, ctx);
 
-            } else {
-                var errorMessage = "Moving from " + window.PEG_SELECTED + " to " + circleClicked + " is not a valid move!";
-                document.getElementById("moveInfo").textContent = errorMessage;
-            }
+    //redraw the circle we're moving so it's on top
+    // and make it partially transparent so we can see the numbers of the holes
+    var globalTransparencyValue = ctx.globalAlpha;
+    ctx.globalAlpha = 0.5;
+    drawCircle(ctx, PEG_COLLECTION[window.PEG_SELECTED - 1], true);
+    ctx.globalAlpha = globalTransparencyValue;
+}
 
-            // Even if they didn't select a good move, reset the board state
-            // to nothing selected
+/**
+ * mousedown event handler, processes the player's move
+ * @param {mouse down event} evt 
+ */
+function dropCircle(evt) {
+    var canvas = document.getElementById("myCanvas");
+    var ctx = canvas.getContext("2d");
+    window.MOVING = false;
+    canvas.onmousemove = null;
 
-            // clear the ring from the selected peg
-            clearClickedCircle(canvas, CIRCLE_COLLECTION[window.PEG_SELECTED - 1]);
+    // The user previously chose a peg, so check to see if
+    // they have selected a valid move
+    var circleSelected = findCircleClicked(canvas, evt, HOLE_COLLECTION);
 
-            // reset the selected peg
-            window.PEG_SELECTED = 0;
+    console.log("Circle dropped on hole: " + circleSelected);
 
-            // redraw the board
-            drawGameCircles(CIRCLE_COLLECTION, canvas.getContext("2d"));
+    var goodMove = checkIfMoveIsValid(circleSelected, window.PEG_SELECTED);
+    if (goodMove) {
+        // valid move messages are for debugging only
+        //var successMessage = "Moving from " + window.PEG_SELECTED + " to " + circleClicked + " is a valid move!";
+        //document.getElementById("moveInfo").textContent = successMessage;
 
-            window.ANY_MOVES_REMAINING = areThereMovesRemaining();
+        // clear the invalid move message if this was a good move
+        document.getElementById("moveInfo").textContent = "";
+
+        console.log("Moving peg " + window.PEG_SELECTED + " to hole " + circleSelected);
+        performMove(circleSelected, window.PEG_SELECTED);
+
+    } else {
+        resetMove(window.PEG_SELECTED);
+        // we don't want to print an error message if the user drops the circle between pegs
+        if (circleSelected > 0  && circleSelected !== window.PEG_SELECTED) {
+            var errorMessage = "Moving from " + window.PEG_SELECTED + " to " + circleSelected + " is not a valid move!";
+            document.getElementById("moveInfo").textContent = errorMessage;            
         }
     }
 
-    // TODO: REMOVE BEFORE SUBMITTING - DEBUG INFO
-    //var movesRemainingMessage;
-    //if (window.ANY_MOVES_REMAINING) {
-    //    movesRemainingMessage = "There are still moves remaining!  You have " + window.PEGS_REMAINING + " left.";
-    //} else {
-    //    movesRemainingMessage = "There are no moves left! You have " + window.PEGS_REMAINING + " left.";
-    //}
-    //document.getElementById("movesRemaining").textContent = movesRemainingMessage;
+    // Even if they didn't select a good move, reset the board state
+    // to nothing selected
 
+    // clear the ring from the selected peg
+    //clearClickedCircle(canvas, PEG_COLLECTION[window.PEG_SELECTED - 1]);
+
+    // reset the selected peg
+    window.PEG_SELECTED = 0;
+
+    // redraw the board
+    redrawBoard(canvas, ctx);
+
+    window.ANY_MOVES_REMAINING = areThereMovesRemaining();
 
     // if there are no moves left, display the game ending message
     if (!window.ANY_MOVES_REMAINING) {
@@ -121,13 +158,13 @@ function displayGameOverMessage() {
  */
 function areThereMovesRemaining() {
     
-    for (var i = 0; i < CIRCLE_COLLECTION.length; i++) {
+    for (var i = 0; i < PEG_COLLECTION.length; i++) {
 
         // the circle number is the index plus 1
         var circleNum = i + 1;
 
         // for each circle, check if it has a peg
-        if (CIRCLE_COLLECTION[i].hasPeg) {
+        if (PEG_COLLECTION[i].hasPeg) {
             // if it has a peg, check if that peg can move
             var validMovesForCurrentPeg = MOVE_LIST[i];
 
@@ -161,15 +198,15 @@ function performMove(destinationCircle, startCircle){
         // find the right destination
         if (pegMove.targetHole === destinationCircle) {
             // get our source circle
-            var currentPeg = CIRCLE_COLLECTION[startCircle - 1];
+            var currentPeg = PEG_COLLECTION[startCircle - 1];
 
             // so we can remove the peg from the hole we're jumping over
-            var jumpedCircle = CIRCLE_COLLECTION[pegMove.overPeg - 1];
+            var jumpedCircle = PEG_COLLECTION[pegMove.overPeg - 1];
             jumpedCircle.hasPeg = false;
             jumpedCircle.color = "White";
 
             // and move the peg to the hole we're jumping to
-            var destination = CIRCLE_COLLECTION[destinationCircle - 1];
+            var destination = PEG_COLLECTION[destinationCircle - 1];
             destination.hasPeg = true;
             destination.color = currentPeg.color;
 
@@ -177,14 +214,35 @@ function performMove(destinationCircle, startCircle){
             currentPeg.hasPeg = false;
             currentPeg.color = "White";
             window.PEGS_REMAINING--;
+
+            // and set the peg's coordinates to the hole we moved to
+            destination.x = HOLE_COLLECTION[destinationCircle - 1].x;
+            destination.y = HOLE_COLLECTION[destinationCircle - 1].y;
+
+            // and reset the peg we were "moving" to be back in it's hole
+            var startingHole = HOLE_COLLECTION[startCircle - 1];
+            currentPeg.x = startingHole.x;
+            currentPeg.y = startingHole.y;
         }
     }
 
 }
 
+/**
+ * If the user didn't make a valid move, place
+ * the peg back in the hole it started in.
+ * @param {Peg the user was trying to move} peg 
+ */
+function resetMove(peg) {
+    var chosenPeg = PEG_COLLECTION[peg - 1];
+    var initialHole = HOLE_COLLECTION[peg - 1];
+
+    chosenPeg.x = initialHole.x;
+    chosenPeg.y = initialHole.y;
+}
 
 /**
- * Uses the state of the board (stored in the global variable CIRCLE_COLLECTION)
+ * Uses the state of the board (stored in the global variable PEG_COLLECTION)
  * to determine if the current move is valid.
  * @param {Hole user is trying to move to} destinationCircle
  * @param {Peg user is trying to move} startCircle
@@ -192,8 +250,13 @@ function performMove(destinationCircle, startCircle){
  */
 function checkIfMoveIsValid(destinationCircle, startCircle) {
 
+    // if no circle was selected, do nothing
+    if (destinationCircle < 0 || startCircle < 0) {
+        return false;
+    }
+
     // first check, if the destination is not empty the move is not valid
-    if (CIRCLE_COLLECTION[destinationCircle - 1].hasPeg)
+    if (PEG_COLLECTION[destinationCircle - 1].hasPeg)
         return false;    
     
     var validMoveList = MOVE_LIST[startCircle - 1];    
@@ -204,7 +267,7 @@ function checkIfMoveIsValid(destinationCircle, startCircle) {
         // first check if this is a valid destination
         if (pegMove.targetHole === destinationCircle) {
             // now check if the hole we're jumping over has a peg
-            if (CIRCLE_COLLECTION[pegMove.overPeg - 1].hasPeg) {
+            if (PEG_COLLECTION[pegMove.overPeg - 1].hasPeg) {
                 return true;                
             }
         }
@@ -227,7 +290,7 @@ function getCursorPosition(canvas, event) {
     var rect = canvas.getBoundingClientRect();
     var x = event.clientX - rect.left;
     var y = event.clientY - rect.top;
-    console.log("x: " + x + " y: " + y);
+    //console.log("x: " + x + " y: " + y);
 
     return { x, y }
 }
@@ -273,9 +336,9 @@ function pointInCircle(x, y, cx, cy, radius) {
 function printCircleInfo() {
     var circleInfo = "";
 
-    for (var i = 0; i < CIRCLE_COLLECTION.length; i++) {
+    for (var i = 0; i < PEG_COLLECTION.length; i++) {
         var circlePos = i + 1;
-        if (CIRCLE_COLLECTION[i].hasPeg) {
+        if (PEG_COLLECTION[i].hasPeg) {
             circleInfo = circleInfo + "Circle" + circlePos + " has a peg \r\n";
         } else {
             circleInfo = circleInfo + "Circle" + circlePos + " is empty \r\n";
@@ -285,9 +348,9 @@ function printCircleInfo() {
     document.getElementById("circleOneInfo").setAttribute('style', 'white-space: pre;');
     document.getElementById("circleOneInfo").textContent = circleInfo;
     //    "Circle One coordinates are " +
-    //CIRCLE_COLLECTION[0].x +
+    //PEG_COLLECTION[0].x +
     //", " +
-    //CIRCLE_COLLECTION[0].y;
+    //PEG_COLLECTION[0].y;
 }
 
 /**
